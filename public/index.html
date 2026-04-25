@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Astro Simulation Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/dashboard.css" />
+  </head>
+  <body>
+    <div class="starfield" id="starfield" aria-hidden="true"></div>
+    <div class="starfield-glow" id="starGlow" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <h1 class="site-title">Astro Simulation Lab</h1>
+      <p class="site-tagline">Interactive orbit mechanics &amp; prototypes</p>
+    </header>
+
+    <main class="projects">
+      <article class="project-card" data-project="slingshot">
+        <div class="project-card-inner">
+          <h2 class="project-name">Slingshot</h2>
+          <p class="project-desc">
+            Gravitational assist — aim and launch probes around a massive body
+            (same rules as the desktop pygame build).
+          </p>
+          <button type="button" class="project-open" data-open="slingshot">
+            Open in browser
+          </button>
+        </div>
+      </article>
+
+      <article class="project-card project-card--placeholder">
+        <div class="project-card-inner">
+          <h2 class="project-name">More labs</h2>
+          <p class="project-desc">New simulations will appear here as cards.</p>
+        </div>
+      </article>
+    </main>
+
+    <div class="modal" id="slingshotModal" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <div
+        class="modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="slingshotTitle"
+      >
+        <header class="modal-header">
+          <h2 id="slingshotTitle">Slingshot</h2>
+          <p class="modal-hint">
+            Click once to place a craft, again to set velocity (direction &
+            length from first point).
+          </p>
+          <button type="button" class="modal-close" data-close-modal aria-label="Close">
+            &times;
+          </button>
+        </header>
+        <div class="modal-body">
+          <canvas id="slingshotCanvas" width="800" height="600"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/dashboard.js"></script>
+  </body>
+</html>

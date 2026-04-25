@@ -4,7 +4,7 @@ Serves the Astro Simulation Lab dashboard and keeps the pygame slingshot app run
 Usage (from repo root):
   python server.py
 
-- http://127.0.0.1:8080/ serves the dashboard (avoids empty-path 404s from a raw file server).
+- http://127.0.0.1:8080/ serves files from public/ (same layout Vercel uses for static sites).
 - The desktop slingshot simulation (slingshot/main.py) is started in a subprocess and
   restarted if it exits, so it stays available alongside the web UI.
 """
@@ -23,7 +23,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-WEB_ROOT = ROOT / "web"
+PUBLIC_ROOT = ROOT / "public"
 SLINGSHOT_DIR = ROOT / "slingshot"
 
 
@@ -51,37 +51,17 @@ def supervise_slingshot() -> None:
 
 class LabHTTPRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(WEB_ROOT), **kwargs)
+        super().__init__(*args, directory=str(PUBLIC_ROOT), **kwargs)
 
     def log_message(self, format: str, *args) -> None:
         sys.stderr.write("%s - - [%s] %s\n" % (self.address_string(), self.log_date_time_string(), format % args))
-
-    def _safe_under(self, base: Path, rel: str) -> Path | None:
-        rel = rel.replace("\\", "/").lstrip("/")
-        if not rel or ".." in rel.split("/"):
-            return None
-        target = (base / rel).resolve()
-        try:
-            target.relative_to(base.resolve())
-        except ValueError:
-            return None
-        return target if target.is_file() else None
 
     def do_GET(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         path = urllib.parse.unquote(parsed.path)
 
         if path == "/" or path == "/index.html":
-            self._send_path(WEB_ROOT / "index.html")
-            return
-
-        if path.startswith("/slingshot-assets/"):
-            rel = path[len("/slingshot-assets/") :]
-            fpath = self._safe_under(SLINGSHOT_DIR, rel)
-            if fpath:
-                self._send_path(fpath)
-            else:
-                self.send_error(HTTPStatus.NOT_FOUND)
+            self._send_path(PUBLIC_ROOT / "index.html")
             return
 
         super().do_GET()
@@ -108,8 +88,8 @@ def main() -> None:
     parser.add_argument("--no-pygame", action="store_true", help="Do not launch slingshot/main.py")
     args = parser.parse_args()
 
-    if not WEB_ROOT.is_dir():
-        print("Missing web/ folder.", file=sys.stderr)
+    if not PUBLIC_ROOT.is_dir():
+        print("Missing public/ folder.", file=sys.stderr)
         sys.exit(1)
 
     if not args.no_pygame:
