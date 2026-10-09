@@ -5,8 +5,7 @@ Usage (from repo root):
   python server.py
 
 - http://127.0.0.1:8080/ serves files from public/ (same layout Vercel uses for static sites).
-- http://127.0.0.1:8080/gravitational-lens/ serves the lensing mini lab from gravitational-lens/.
-- http://127.0.0.1:8080/black-hole-escape/ serves the escape mini lab from black-hole-escape/.
+  The lens and escape labs live at public/gravitational-lens/ and public/black-hole-escape/.
 - The desktop slingshot simulation (slingshot/main.py) is started in a subprocess and
   restarted if it exits, so it stays available alongside the web UI.
 """
@@ -27,10 +26,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 PUBLIC_ROOT = ROOT / "public"
 SLINGSHOT_DIR = ROOT / "slingshot"
-LAB_DIRS = {
-    "/gravitational-lens": (ROOT / "gravitational-lens").resolve(),
-    "/black-hole-escape": (ROOT / "black-hole-escape").resolve(),
-}
 
 
 def supervise_slingshot() -> None:
@@ -70,30 +65,7 @@ class LabHTTPRequestHandler(SimpleHTTPRequestHandler):
             self._send_path(PUBLIC_ROOT / "index.html")
             return
 
-        if self._serve_lab(path):
-            return
-
         super().do_GET()
-
-    def _serve_lab(self, path: str) -> bool:
-        for prefix, root in LAB_DIRS.items():
-            if path != prefix and not path.startswith(prefix + "/"):
-                continue
-            rel = path[len(prefix) :].lstrip("/") or "index.html"
-            target = (root / rel).resolve()
-            try:
-                target.relative_to(root)
-            except ValueError:
-                self.send_error(HTTPStatus.FORBIDDEN)
-                return True
-            if target.is_dir():
-                target = target / "index.html"
-            if not target.is_file():
-                self.send_error(HTTPStatus.NOT_FOUND)
-                return True
-            self._send_path(target)
-            return True
-        return False
 
     def _send_path(self, fpath: Path) -> None:
         try:
