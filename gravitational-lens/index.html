@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gravitational Lens Lab</title>
+<script>if (window.self !== window.top) document.documentElement.classList.add("embedded");</script>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #070a13;
+    --panel: rgba(17, 23, 42, .88);
+    --panel2: rgba(23, 31, 55, .72);
+    --line: rgba(166, 190, 255, .16);
+    --text: #edf2ff;
+    --muted: #99a7c7;
+    --cyan: #75e4ff;
+    --violet: #b49aff;
+    --gold: #ffd89a;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; height: 100%; overflow: hidden; color: var(--text);
+    background: var(--bg);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .shell {
+    height: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 14px 14px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: 0 0 auto; }
+  html.embedded header { display: none; }
+  html.embedded .shell { padding-top: 10px; }
+  .subtitle { color: var(--muted); max-width: 720px; line-height: 1.45; margin: 0; font-size: .84rem; }
+  .live-pill { border: 1px solid rgba(117,228,255,.28); background: rgba(117,228,255,.08); color: var(--cyan); border-radius: 999px; padding: 6px 10px; font-size: .72rem; white-space: nowrap; }
+  main { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(260px, .8fr); gap: 12px; align-items: stretch; min-height: 460px; }
+  .panel { border: 1px solid var(--line); background: var(--panel); border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,.18); overflow: hidden; }
+  .visual-panel { display: flex; flex-direction: column; min-height: 460px; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .panel-head h2 { margin: 0; font-size: .92rem; letter-spacing: -.01em; }
+  .panel-head span { color: var(--muted); font-size: .72rem; }
+  .canvas-wrap { position: relative; flex: 1; min-height: 320px; background: #050711; }
+  canvas { display: block; width: 100%; height: 100%; min-height: 320px; touch-action: none; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  .canvas-label { position: absolute; pointer-events: none; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: rgba(219,229,255,.7); }
+  .label-source { top: 14px; left: 16px; }
+  .label-lens { bottom: 14px; left: 16px; }
+  .canvas-help { position: absolute; right: 12px; bottom: 12px; background: rgba(5,7,17,.72); color: #aebbd9; border: 1px solid var(--line); padding: 7px 10px; border-radius: 9px; font-size: .7rem; }
+  .visual-footer { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 10px 16px; color: var(--muted); font-size: .74rem; }
+  .key { display: inline-flex; align-items: center; gap: 7px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .controls { padding: 16px; }
+  .controls h2 { font-size: .95rem; margin: 0 0 4px; }
+  .controls .intro { color: var(--muted); font-size: .78rem; line-height: 1.45; margin: 0 0 16px; }
+  .control { margin: 0 0 16px; }
+  .control-top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
+  label { font-size: .82rem; color: #e5ebff; font-weight: 650; }
+  output { font-variant-numeric: tabular-nums; color: var(--cyan); font-size: .8rem; }
+  input[type=range] { width: 100%; accent-color: var(--cyan); cursor: pointer; }
+  .range-ends { display: flex; justify-content: space-between; font-size: .68rem; color: #7381a2; margin-top: 4px; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); color: #dfe7ff; font-size: .8rem; }
+  .switch { position: relative; width: 42px; height: 24px; flex: 0 0 auto; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: #303953; border-radius: 99px; cursor: pointer; transition: .2s; }
+  .slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; top: 3px; border-radius: 50%; background: #aab6d4; transition: .2s; }
+  .switch input:checked + .slider { background: rgba(117,228,255,.38); }
+  .switch input:checked + .slider:before { transform: translateX(18px); background: var(--cyan); }
+  .buttons { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  button { border: 1px solid var(--line); color: var(--text); background: #1a2440; border-radius: 11px; padding: 9px 12px; font: inherit; font-size: .78rem; cursor: pointer; transition: .18s; }
+  button:hover { border-color: rgba(117,228,255,.55); transform: translateY(-1px); }
+  button.primary { color: #07111b; background: var(--cyan); border-color: transparent; font-weight: 800; }
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .metric { padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel2); min-width: 0; }
+  .metric .name { color: var(--muted); font-size: .7rem; margin-bottom: 6px; }
+  .metric .value { font-size: clamp(1.05rem, 2vw, 1.4rem); letter-spacing: -.04em; font-weight: 750; font-variant-numeric: tabular-nums; }
+  .metric .unit { color: var(--muted); font-size: .68rem; margin-top: 4px; }
+  .lower { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .info { padding: 16px 18px; }
+  .info h2 { margin: 0 0 8px; font-size: .95rem; }
+  .info p { color: var(--muted); font-size: .82rem; line-height: 1.6; margin: 0; }
+  .equation { margin: 12px 0; padding: 12px; border-radius: 12px; background: rgba(117,228,255,.06); border: 1px solid rgba(117,228,255,.13); font-family: Georgia, serif; font-size: clamp(.92rem, 2vw, 1.08rem); text-align: center; color: #d9f8ff; }
+  .note { font-size: .72rem !important; color: #7887a8 !important; }
+  .challenge { display: flex; gap: 12px; align-items: flex-start; margin-top: 12px; padding: 12px; background: rgba(180,154,255,.08); border: 1px solid rgba(180,154,255,.2); border-radius: 12px; }
+  .challenge strong { display: block; font-size: .78rem; margin-bottom: 4px; color: #d4c6ff; }
+  .challenge p { font-size: .76rem; line-height: 1.45; }
+  @media (max-width: 900px) {
+    .layout, .lower { grid-template-columns: 1fr; }
+    .visual-panel { min-height: 420px; }
+    .layout { min-height: 0; }
+  }
+  @media (max-width: 600px) {
+    header { align-items: flex-start; }
+    .live-pill { display: none; }
+    .metrics { grid-template-columns: 1fr; }
+    .visual-panel { min-height: 380px; }
+    .canvas-wrap, canvas { min-height: 260px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <p class="subtitle">Drag the violet source galaxy or move a slider. Mass bends its light into multiple images, or an Einstein ring when the alignment is nearly perfect.</p>
+    <div class="live-pill">● Live</div>
+  </header>
+
+  <main>
+    <section class="layout">
+      <div class="panel visual-panel">
+        <div class="panel-head">
+          <h2>Lens geometry</h2><span>Illustrative ray tracing · not to scale</span>
+        </div>
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas id="lensCanvas" aria-label="Interactive gravitational lensing visualization"></canvas>
+          <div class="canvas-label label-source">Background source</div>
+          <div class="canvas-label label-lens">Foreground lens</div>
+          <div class="canvas-help">Drag the source galaxy to change alignment</div>
+        </div>
+        <div class="visual-footer">
+          <span class="key"><i class="dot" style="background:#b49aff"></i> Source galaxy</span>
+          <span class="key"><i class="dot" style="background:#ffd89a"></i> Lensed images</span>
+          <span class="key"><i class="dot" style="background:#75e4ff"></i> Light paths (schematic)</span>
+        </div>
+      </div>
+
+      <aside class="panel controls">
+        <h2>Experiment controls</h2>
+        <p class="intro">Change one variable at a time. The view and measurements update immediately.</p>
+
+        <div class="control">
+          <div class="control-top"><label for="mass">Lens mass</label><output id="massOut">1.0×</output></div>
+          <input id="mass" type="range" min="0.25" max="2.5" step="0.05" value="1">
+          <div class="range-ends"><span>Lower mass</span><span>Higher mass</span></div>
+        </div>
+        <div class="control">
+          <div class="control-top"><label for="alignment">Source alignment</label><output id="alignmentOut">0.15 θE</output></div>
+          <input id="alignment" type="range" min="0" max="1.8" step="0.01" value="0.15">
+          <div class="range-ends"><span>Perfect alignment</span><span>Offset source</span></div>
+        </div>
+        <div class="control">
+          <div class="control-top"><label for="distance">Source distance</label><output id="distanceOut">Far</output></div>
+          <input id="distance" type="range" min="0.6" max="1.8" step="0.05" value="1">
+          <div class="range-ends"><span>Closer</span><span>Farther</span></div>
+        </div>
+        <div class="toggle-row">
+          <span>Show light paths</span>
+          <label class="switch"><input id="raysToggle" type="checkbox" checked><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span>Show Einstein radius</span>
+          <label class="switch"><input id="ringToggle" type="checkbox" checked><span class="slider"></span></label>
+        </div>
+        <div class="buttons">
+          <button class="primary" id="alignBtn" type="button">Perfect alignment</button>
+          <button id="resetBtn" type="button">Reset lab ↺</button>
+        </div>
+      </aside>
+    </section>
+
+    <section class="metrics" aria-live="polite">
+      <div class="metric"><div class="name">Einstein radius</div><div class="value" id="thetaMetric">1.00</div><div class="unit">relative angular units</div></div>
+      <div class="metric"><div class="name">Visible point images</div><div class="value" id="imageMetric">2</div><div class="unit" id="imageCaption">Two images predicted</div></div>
+      <div class="metric"><div class="name">Magnification trend</div><div class="value" id="magMetric">High</div><div class="unit">combined brightness estimate</div></div>
+    </section>
+
+    <section class="lower">
+      <div class="panel info">
+        <h2>What is happening?</h2>
+        <p>In general relativity, mass curves spacetime, and light follows that curved geometry. For a distant source behind a compact foreground mass, the point-mass lens model predicts one or two images. If the source, lens, and observer line up almost perfectly, the images merge into an Einstein ring.</p>
+        <div class="equation">β = θ − θ<sub>E</sub><sup>2</sup> / θ</div>
+        <p class="note">β is the source's angular offset, θ is an image's angular position, and θE is the Einstein radius. The simulation solves this simplified lens equation for image positions.</p>
+      </div>
+      <div class="panel info">
+        <h2>Your mini investigation</h2>
+        <p>Start with near-perfect alignment, then slowly move the source away from the lens center. Watch the ring break into two images and compare their brightness. Next, increase the lens mass and see how the Einstein radius grows.</p>
+        <div class="challenge">
+          <span style="font-size:1.2rem">✦</span>
+          <div><strong>Challenge</strong><p>Can you make a near-complete Einstein ring? Try to minimize the source offset without changing the lens mass.</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('lensCanvas');
+  const ctx = canvas.getContext('2d');
+  const $ = id => document.getElementById(id);
+  const controls = {
+    mass: $('mass'), alignment: $('alignment'), distance: $('distance'),
+    rays: $('raysToggle'), ring: $('ringToggle')
+  };
+  let width = 800, height = 500, dpr = 1;
+  let stars = [];
+  let dragging = false;
+  let dragStart = null;
+  const state = { mass: 1, alignment: 0.15, distance: 1 };
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = Math.max(300, rect.width);
+    height = Math.max(300, rect.height);
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    stars = Array.from({length: Math.round(width * height / 2500)}, () => ({
+      x: Math.random() * width, y: Math.random() * height,
+      r: Math.random() * 1.25 + .2, a: Math.random() * .55 + .12,
+      phase: Math.random() * Math.PI * 2
+    }));
+    draw();
+  }
+
+  function lensCenter() { return { x: width * .51, y: height * .53 }; }
+  function thetaE() { return 47 * Math.sqrt(state.mass * state.distance); }
+  function sourceCenter() {
+    const c = lensCenter();
+    return { x: c.x + state.alignment * thetaE() * .72, y: c.y - thetaE() * .1 };
+  }
+
+  function galaxy(x, y, scale = 1, rotation = -.35, opacity = 1, tint = '#b49aff') {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.globalAlpha = opacity;
+    const rx = 23 * scale, ry = 9 * scale;
+    const glow = ctx.createRadialGradient(0, 0, 1, 0, 0, 32 * scale);
+    glow.addColorStop(0, tint); glow.addColorStop(.35, 'rgba(150,130,255,.35)'); glow.addColorStop(1, 'rgba(100,90,255,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.ellipse(0, 0, 34 * scale, 20 * scale, 0, 0, Math.PI * 2); ctx.fill();
+    for (let i = 0; i < 5; i++) {
+      ctx.strokeStyle = `rgba(${tint === '#ffd89a' ? '255,216,154' : '185,173,255'},${.15 + i * .09})`;
+      ctx.lineWidth = (5 - i) * scale;
+      ctx.beginPath(); ctx.ellipse(0, 0, rx * (1 - i * .13), ry * (1 - i * .12), 0, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.fillStyle = '#fff6dd';
+    ctx.beginPath(); ctx.ellipse(0, 0, 3.5 * scale, 2.4 * scale, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function imagePositions(beta, einstein) {
+    if (beta < 0.0001) return [-einstein, einstein];
+    const root = Math.sqrt(beta * beta + 4 * einstein * einstein);
+    return [(beta + root) / 2, (beta - root) / 2];
+  }
+  function magnification(theta, beta, einstein) {
+    if (Math.abs(beta) < .0001) return Infinity;
+    return Math.abs((theta / beta) * (1 / (1 - Math.pow(einstein / theta, 4))));
+  }
+
+  function draw() {
+    if (!ctx || !width) return;
+    const c = lensCenter(), src = sourceCenter(), einstein = thetaE();
+    ctx.clearRect(0, 0, width, height);
+    const bg = ctx.createRadialGradient(width * .52, height * .52, 5, width * .52, height * .52, Math.max(width, height) * .7);
+    bg.addColorStop(0, '#10172c'); bg.addColorStop(1, '#03050d');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
+
+    stars.forEach((s, i) => {
+      ctx.globalAlpha = s.a * (.78 + .22 * Math.sin(performance.now() / 1800 + s.phase));
+      ctx.fillStyle = i % 11 === 0 ? '#9cdfff' : '#dce5ff';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    ctx.setLineDash([3, 7]); ctx.strokeStyle = 'rgba(155,178,235,.18)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(c.x, 20); ctx.lineTo(c.x, height - 20); ctx.stroke(); ctx.setLineDash([]);
+
+    const scaledBeta = state.alignment * .72;
+    const positions = imagePositions(scaledBeta, 1);
+    const imageXs = positions.map(p => c.x + p * einstein);
+    const imageYs = positions.map((p, i) => c.y + (i === 0 ? -1 : 1) * (8 + Math.min(22, Math.abs(scaledBeta) * 10)));
+    const aligned = state.alignment < .055;
+
+    if (controls.ring.checked) {
+      ctx.beginPath(); ctx.arc(c.x, c.y, einstein, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(117,228,255,.32)'; ctx.lineWidth = 1.2; ctx.setLineDash([5, 6]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(117,228,255,.78)'; ctx.font = '11px system-ui';
+      ctx.fillText('θE', c.x + einstein + 7, c.y - 5);
+    }
+
+    if (controls.rays.checked) {
+      for (let i = 0; i < 2; i++) {
+        const endX = imageXs[i], endY = imageYs[i];
+        ctx.beginPath();
+        ctx.moveTo(src.x + 10, src.y);
+        ctx.bezierCurveTo(width * .74, src.y + (i ? 85 : -85), c.x + einstein * (i ? -1.1 : 1.1), c.y + (i ? 35 : -35), endX, endY);
+        ctx.strokeStyle = i ? 'rgba(117,228,255,.32)' : 'rgba(117,228,255,.56)';
+        ctx.lineWidth = 1.3; ctx.stroke();
+        const midX = c.x + (endX - c.x) * .52, midY = c.y + (endY - c.y) * .52;
+        ctx.fillStyle = 'rgba(117,228,255,.75)';
+        ctx.beginPath(); ctx.arc(midX, midY, 2, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    if (aligned) {
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(-.16);
+      ctx.shadowColor = '#ffd89a'; ctx.shadowBlur = 18;
+      ctx.strokeStyle = '#ffe4b3'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.ellipse(0, 0, einstein, einstein * .9, 0, -.17, Math.PI * 2 - .17); ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,216,154,.35)'; ctx.lineWidth = 11;
+      ctx.beginPath(); ctx.ellipse(0, 0, einstein, einstein * .9, 0, -.17, Math.PI * 2 - .17); ctx.stroke();
+      ctx.restore();
+    } else {
+      imageXs.forEach((x, i) => galaxy(x, imageYs[i], i === 0 ? 0.7 : 0.58, i === 0 ? -.5 : .5, 1, '#ffd89a'));
+    }
+
+    const lensR = 10 + state.mass * 4;
+    const halo = ctx.createRadialGradient(c.x, c.y, lensR * .3, c.x, c.y, einstein * .56);
+    halo.addColorStop(0, 'rgba(5,7,18,1)');
+    halo.addColorStop(.18, 'rgba(8,10,22,.98)');
+    halo.addColorStop(.33, 'rgba(91,94,157,.22)');
+    halo.addColorStop(1, 'rgba(110,126,255,0)');
+    ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(c.x, c.y, einstein * .56, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.shadowColor = '#8b9fff'; ctx.shadowBlur = 16;
+    ctx.fillStyle = '#02030a'; ctx.beginPath(); ctx.arc(c.x, c.y, lensR, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(174,190,255,.55)'; ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
+
+    galaxy(src.x, src.y, .92, -.38, .94, '#b49aff');
+    ctx.fillStyle = 'rgba(226,233,255,.82)'; ctx.font = '11px system-ui';
+    ctx.fillText('source position', Math.min(src.x + 22, width - 105), src.y - 18);
+    ctx.fillText('lens mass', c.x + 18, c.y + lensR + 17);
+
+    if (state.alignment > .03) {
+      ctx.strokeStyle = 'rgba(180,154,255,.65)'; ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(src.x, src.y); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+
+  function update() {
+    state.mass = Number(controls.mass.value);
+    state.alignment = Number(controls.alignment.value);
+    state.distance = Number(controls.distance.value);
+    $('massOut').textContent = state.mass.toFixed(2) + '×';
+    $('alignmentOut').textContent = state.alignment.toFixed(2) + ' θE';
+    const d = state.distance;
+    $('distanceOut').textContent = d < .85 ? 'Nearer' : d > 1.25 ? 'Farther' : 'Far';
+    const e = thetaE();
+    $('thetaMetric').textContent = (e / 47).toFixed(2);
+    const aligned = state.alignment < .055;
+    $('imageMetric').textContent = aligned ? 'Ring' : '2';
+    $('imageCaption').textContent = aligned ? 'Near-perfect alignment' : 'Two images predicted';
+    $('magMetric').textContent = aligned ? 'Very high' : state.alignment < .35 ? 'High' : state.alignment < .9 ? 'Moderate' : 'Lower';
+    draw();
+  }
+
+  Object.values(controls).forEach(control => control.addEventListener('input', update));
+  $('alignBtn').addEventListener('click', () => { controls.alignment.value = '0'; update(); });
+  $('resetBtn').addEventListener('click', () => {
+    controls.mass.value = '1'; controls.alignment.value = '.15'; controls.distance.value = '1';
+    controls.rays.checked = true; controls.ring.checked = true; update();
+  });
+
+  function pointerPosition(event) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  }
+  canvas.addEventListener('pointerdown', event => {
+    const p = pointerPosition(event), s = sourceCenter();
+    if (Math.hypot(p.x - s.x, p.y - s.y) < 42) {
+      dragging = true; dragStart = p; canvas.setPointerCapture(event.pointerId);
+    }
+  });
+  canvas.addEventListener('pointermove', event => {
+    if (!dragging) return;
+    const p = pointerPosition(event), c = lensCenter(), e = thetaE();
+    const offset = Math.max(0, Math.min(1.8, (p.x - c.x) / (e * .72)));
+    controls.alignment.value = String(offset);
+    update();
+  });
+  canvas.addEventListener('pointerup', () => { dragging = false; dragStart = null; });
+  canvas.addEventListener('pointercancel', () => { dragging = false; dragStart = null; });
+
+  const resizeObserver = new ResizeObserver(resize);
+  resizeObserver.observe(canvas);
+  window.addEventListener('resize', resize);
+  resize();
+  update();
+  function animate() {
+    if (document.visibilityState === 'visible') draw();
+    requestAnimationFrame(animate);
+  }
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>

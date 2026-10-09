@@ -18,7 +18,7 @@
 
     <header class="site-header">
       <h1 class="site-title">Astro Simulation Lab</h1>
-      <p class="site-tagline">Interactive orbit mechanics &amp; prototypes</p>
+      <p class="site-tagline">Interactive astrophysics mini labs</p>
     </header>
 
     <main class="projects">
@@ -30,6 +30,19 @@
             (same rules as the desktop pygame build).
           </p>
           <button type="button" class="project-open" data-open="slingshot">
+            Open in browser
+          </button>
+        </div>
+      </article>
+
+      <article class="project-card" data-project="gravitational-lens">
+        <div class="project-card-inner">
+          <h2 class="project-name">Gravitational Lens</h2>
+          <p class="project-desc">
+            Mass bends light — drag a background galaxy and tune the lens to
+            form multiple images or an Einstein ring.
+          </p>
+          <button type="button" class="project-open" data-open="gravitational-lens">
             Open in browser
           </button>
         </div>
@@ -63,6 +76,35 @@
         </header>
         <div class="modal-body">
           <canvas id="slingshotCanvas" width="800" height="600"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal modal--lab" id="lensModal" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <div
+        class="modal-panel modal-panel--lab"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="lensTitle"
+      >
+        <header class="modal-header">
+          <h2 id="lensTitle">Gravitational Lens</h2>
+          <p class="modal-hint">
+            Drag the violet source galaxy, or use the sliders, to change
+            alignment, mass, and distance.
+          </p>
+          <button type="button" class="modal-close" data-close-modal aria-label="Close">
+            &times;
+          </button>
+        </header>
+        <div class="modal-body">
+          <iframe
+            id="lensFrame"
+            class="lab-frame"
+            title="Gravitational Lens Lab"
+            src="about:blank"
+          ></iframe>
         </div>
       </div>
     </div>

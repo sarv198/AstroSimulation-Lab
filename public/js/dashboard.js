@@ -250,12 +250,34 @@ function main() {
 
   const modal = document.getElementById("slingshotModal");
   const canvas = document.getElementById("slingshotCanvas");
+  const lensModal = document.getElementById("lensModal");
+  const lensFrame = document.getElementById("lensFrame");
   let stopSim = null;
 
   const assetBase = "/slingshot-assets";
 
+  const releasePageScroll = () => {
+    if (modal.hidden && lensModal.hidden) document.body.style.overflow = "";
+  };
+
+  const closeLens = () => {
+    lensModal.hidden = true;
+    lensFrame.src = "about:blank";
+    releasePageScroll();
+  };
+
+  const close = () => {
+    modal.hidden = true;
+    if (stopSim) {
+      stopSim();
+      stopSim = null;
+    }
+    releasePageScroll();
+  };
+
   document.querySelectorAll("[data-open='slingshot']").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (!lensModal.hidden) closeLens();
       modal.hidden = false;
       document.body.style.overflow = "hidden";
       if (stopSim) stopSim();
@@ -263,21 +285,32 @@ function main() {
     });
   });
 
-  const close = () => {
-    modal.hidden = true;
-    document.body.style.overflow = "";
-    if (stopSim) {
-      stopSim();
-      stopSim = null;
-    }
-  };
+  document.querySelectorAll("[data-open='gravitational-lens']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (!modal.hidden) close();
+      lensModal.hidden = false;
+      document.body.style.overflow = "hidden";
+      const next = "/gravitational-lens/index.html";
+      if (lensFrame.src.endsWith(next)) {
+        lensFrame.contentWindow?.location.reload();
+      } else {
+        lensFrame.src = next;
+      }
+    });
+  });
 
   modal.querySelectorAll("[data-close-modal]").forEach((el) => {
     el.addEventListener("click", close);
   });
 
+  lensModal.querySelectorAll("[data-close-modal]").forEach((el) => {
+    el.addEventListener("click", closeLens);
+  });
+
   window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !modal.hidden) close();
+    if (e.key !== "Escape") return;
+    if (!lensModal.hidden) closeLens();
+    else if (!modal.hidden) close();
   });
 }
 
