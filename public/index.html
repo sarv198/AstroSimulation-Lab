@@ -48,6 +48,19 @@
         </div>
       </article>
 
+      <article class="project-card" data-project="black-hole-escape">
+        <div class="project-card-inner">
+          <h2 class="project-name">Black Hole Escape</h2>
+          <p class="project-desc">
+            Launch a probe near a black hole and tune speed, angle, and mass
+            to escape, orbit, or fall in.
+          </p>
+          <button type="button" class="project-open" data-open="black-hole-escape">
+            Open in browser
+          </button>
+        </div>
+      </article>
+
       <article class="project-card project-card--placeholder">
         <div class="project-card-inner">
           <h2 class="project-name">More labs</h2>
@@ -103,6 +116,35 @@
             id="lensFrame"
             class="lab-frame"
             title="Gravitational Lens Lab"
+            src="about:blank"
+          ></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal modal--lab" id="escapeModal" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <div
+        class="modal-panel modal-panel--lab modal-panel--escape"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="escapeTitle"
+      >
+        <header class="modal-header">
+          <h2 id="escapeTitle">Black Hole Escape</h2>
+          <p class="modal-hint">
+            Set speed and angle on the launch board, then fire the probe.
+            Click the scope to aim.
+          </p>
+          <button type="button" class="modal-close" data-close-modal aria-label="Close">
+            &times;
+          </button>
+        </header>
+        <div class="modal-body">
+          <iframe
+            id="escapeFrame"
+            class="lab-frame"
+            title="Black Hole Escape Lab"
             src="about:blank"
           ></iframe>
         </div>

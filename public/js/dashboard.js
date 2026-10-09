@@ -252,17 +252,27 @@ function main() {
   const canvas = document.getElementById("slingshotCanvas");
   const lensModal = document.getElementById("lensModal");
   const lensFrame = document.getElementById("lensFrame");
+  const escapeModal = document.getElementById("escapeModal");
+  const escapeFrame = document.getElementById("escapeFrame");
   let stopSim = null;
 
   const assetBase = "/slingshot-assets";
 
   const releasePageScroll = () => {
-    if (modal.hidden && lensModal.hidden) document.body.style.overflow = "";
+    if (modal.hidden && lensModal.hidden && escapeModal.hidden) {
+      document.body.style.overflow = "";
+    }
   };
 
   const closeLens = () => {
     lensModal.hidden = true;
     lensFrame.src = "about:blank";
+    releasePageScroll();
+  };
+
+  const closeEscape = () => {
+    escapeModal.hidden = true;
+    escapeFrame.src = "about:blank";
     releasePageScroll();
   };
 
@@ -275,9 +285,17 @@ function main() {
     releasePageScroll();
   };
 
+  const openLab = (labModal, frame, src) => {
+    labModal.hidden = false;
+    document.body.style.overflow = "hidden";
+    if (frame.src.endsWith(src)) frame.contentWindow?.location.reload();
+    else frame.src = src;
+  };
+
   document.querySelectorAll("[data-open='slingshot']").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (!lensModal.hidden) closeLens();
+      if (!escapeModal.hidden) closeEscape();
       modal.hidden = false;
       document.body.style.overflow = "hidden";
       if (stopSim) stopSim();
@@ -288,14 +306,16 @@ function main() {
   document.querySelectorAll("[data-open='gravitational-lens']").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (!modal.hidden) close();
-      lensModal.hidden = false;
-      document.body.style.overflow = "hidden";
-      const next = "/gravitational-lens/index.html";
-      if (lensFrame.src.endsWith(next)) {
-        lensFrame.contentWindow?.location.reload();
-      } else {
-        lensFrame.src = next;
-      }
+      if (!escapeModal.hidden) closeEscape();
+      openLab(lensModal, lensFrame, "/gravitational-lens/index.html");
+    });
+  });
+
+  document.querySelectorAll("[data-open='black-hole-escape']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (!modal.hidden) close();
+      if (!lensModal.hidden) closeLens();
+      openLab(escapeModal, escapeFrame, "/black-hole-escape/index.html");
     });
   });
 
@@ -307,9 +327,14 @@ function main() {
     el.addEventListener("click", closeLens);
   });
 
+  escapeModal.querySelectorAll("[data-close-modal]").forEach((el) => {
+    el.addEventListener("click", closeEscape);
+  });
+
   window.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (!lensModal.hidden) closeLens();
+    if (!escapeModal.hidden) closeEscape();
+    else if (!lensModal.hidden) closeLens();
     else if (!modal.hidden) close();
   });
 }

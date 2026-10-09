@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Black Hole Escape Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+<script>if (window.self !== window.top) document.documentElement.classList.add("embedded");</script>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #110906;
+    --panel: #1b100c;
+    --ink: #f4e2d0;
+    --muted: #b49278;
+    --ember: #ff6a1a;
+    --gold: #ffc14a;
+    --red: #ff4b3a;
+    --line: rgba(255, 122, 48, 0.32);
+    --metal: #2a1812;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    color: var(--ink);
+    background:
+      radial-gradient(ellipse at 0% 100%, rgba(255, 70, 20, 0.16), transparent 42%),
+      repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255, 90, 30, 0.015) 4px),
+      var(--bg);
+    font-family: "Rajdhani", "Segoe UI", sans-serif;
+  }
+  .shell {
+    height: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    background: linear-gradient(90deg, #2a120c, #140c09 55%);
+    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+  }
+  html.embedded header { display: none; }
+  .kicker {
+    margin: 0;
+    color: var(--ember);
+    letter-spacing: 0.22em;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+  }
+  h1 {
+    margin: 2px 0 0;
+    font-size: clamp(1.4rem, 2vw, 1.9rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .subtitle { margin: 4px 0 0; color: var(--muted); max-width: 640px; font-size: 0.95rem; }
+  .beacon {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--gold);
+    font-family: "Share Tech Mono", ui-monospace, monospace;
+    letter-spacing: 0.14em;
+    font-size: 0.75rem;
+  }
+  .beacon i {
+    width: 9px;
+    height: 9px;
+    background: var(--ember);
+    box-shadow: 0 0 10px var(--ember);
+    animation: blink 1s steps(2) infinite;
+  }
+  main { display: flex; flex-direction: column; gap: 12px; }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+    gap: 12px;
+    align-items: stretch;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35), 0 16px 40px rgba(0, 0, 0, 0.28);
+  }
+  .layout { height: calc(100dvh - 28px); min-height: 360px; }
+  .deck, .viewport { height: 100%; min-height: 0; }
+  .deck { display: flex; flex-direction: column; padding: 12px; overflow: hidden; }
+  .deck-body { flex: 1; min-height: 0; overflow: auto; padding-right: 4px; }
+  .deck-actions { flex: 0 0 auto; padding-top: 8px; border-top: 1px solid var(--line); }
+  .deck h2, .viewport-head h2, .info h2 {
+    margin: 0;
+    font-size: 0.95rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .intro { margin: 6px 0 14px; color: var(--muted); font-size: 0.92rem; line-height: 1.4; }
+  .dial { margin: 0 0 10px; }
+  .dial-top, .ends {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+  }
+  label {
+    font-size: 0.84rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #f0c9a4;
+    font-weight: 700;
+  }
+  output {
+    font-family: "Share Tech Mono", ui-monospace, monospace;
+    color: var(--gold);
+    font-size: 0.86rem;
+  }
+  .rail {
+    position: relative;
+    margin-top: 8px;
+    height: 28px;
+  }
+  .rail::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 9px;
+    height: 10px;
+    background:
+      linear-gradient(90deg, rgba(255, 106, 26, 0.95) var(--fill, 40%), rgba(42, 24, 18, 0.2) var(--fill, 40%)),
+      repeating-linear-gradient(90deg, #4a2a1c 0 2px, transparent 2px 10px);
+    box-shadow: inset 0 0 0 1px #6a341c, 0 0 12px rgba(255, 80, 20, 0.25);
+    pointer-events: none;
+  }
+  .rail::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: var(--fill, 40%);
+    top: 9px;
+    height: 10px;
+    background: repeating-linear-gradient(90deg, transparent 0 8px, rgba(255, 236, 196, 0.75) 8px 10px);
+    background-size: 18px 100%;
+    animation: crawl 0.7s linear infinite;
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 28px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 10px;
+    background: transparent;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 22px;
+    margin-top: -6px;
+    background: var(--gold);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    box-shadow: 0 0 12px var(--ember);
+    animation: pulse-thumb 1.05s ease-in-out infinite;
+  }
+  input[type="range"]::-moz-range-track {
+    height: 10px;
+    background: transparent;
+    border: 0;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 22px;
+    border: 0;
+    border-radius: 0;
+    background: var(--gold);
+    box-shadow: 0 0 12px var(--ember);
+  }
+  .ends { margin-top: 2px; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: #8d6a52; }
+  .choice { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 4px 0 12px; }
+  button {
+    border: 1px solid #8a4a28;
+    color: var(--ink);
+    background: #24140f;
+    padding: 9px 8px;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  }
+  button:hover { border-color: var(--gold); color: var(--gold); }
+  button.selected {
+    color: #1a0c06;
+    border-color: transparent;
+    background: linear-gradient(100deg, #ff6a1a 0%, #ffd27a 45%, #ff6a1a 90%);
+    background-size: 220% 100%;
+    animation: sheen 1.7s linear infinite;
+  }
+  .latch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid rgba(255, 122, 48, 0.22);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: #f0c9a4;
+    cursor: pointer;
+  }
+  .latch input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .bolt {
+    width: 52px;
+    height: 24px;
+    border: 1px solid #ff8a3d;
+    background: #120b08;
+    position: relative;
+    flex: 0 0 auto;
+  }
+  .bolt::before {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 3px;
+    top: 3px;
+    background: #6b4330;
+    transition: transform 0.18s ease, background 0.18s ease;
+  }
+  .latch input:checked + .bolt::before {
+    transform: translateX(28px);
+    background: var(--gold);
+    box-shadow: 0 0 10px var(--ember);
+    animation: throb 0.9s ease-in-out infinite;
+  }
+  .buttons { display: flex; gap: 8px; margin-top: 12px; }
+  button.launch {
+    flex: 1.4;
+    color: #1a0c06;
+    background: var(--ember);
+    border-color: transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  button.launch::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.35) 50%, transparent 80%);
+    background-size: 200% 100%;
+    animation: sheen 1.4s linear infinite;
+  }
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 10px;
+    border: 1px dashed rgba(255, 176, 90, 0.4);
+    background: #120c09;
+    font-family: "Share Tech Mono", ui-monospace, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+  }
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--gold);
+    box-shadow: 0 0 12px currentColor;
+    animation: blink 1s steps(2) infinite;
+    flex: 0 0 auto;
+  }
+  .viewport { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .viewport-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: baseline;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    background: #24140f;
+  }
+  .viewport-head span {
+    color: var(--muted);
+    font-family: "Share Tech Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+  }
+  .canvas-wrap { position: relative; flex: 1; min-height: 0; background: #070403; }
+  canvas { display: block; width: 100%; height: 100%; min-height: 0; cursor: crosshair; }
+  .tag {
+    position: absolute;
+    pointer-events: none;
+    font-family: "Share Tech Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 214, 176, 0.78);
+  }
+  .tag-top { top: 12px; left: 14px; }
+  .tag-bottom { bottom: 12px; left: 14px; }
+  .hint {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    padding: 6px 8px;
+    background: rgba(18, 8, 4, 0.82);
+    border: 1px solid var(--line);
+    color: #e7c2a2;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 8px 14px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .key { display: inline-flex; align-items: center; gap: 7px; }
+  .pip { width: 8px; height: 8px; display: inline-block; transform: rotate(45deg); }
+  .readouts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 10px;
+    border-top: 1px solid var(--line);
+    background: #140c09;
+  }
+  .readout { min-width: 0; position: relative; overflow: hidden; padding-bottom: 8px; }
+  .readout .name {
+    color: var(--muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .readout .value {
+    font-family: "Share Tech Mono", ui-monospace, monospace;
+    font-size: clamp(1.05rem, 2vw, 1.45rem);
+    color: var(--gold);
+    letter-spacing: 0.04em;
+  }
+  .readout .unit { color: #8d6a52; font-size: 0.7rem; }
+  .readout::after {
+    content: "";
+    position: absolute;
+    left: -40%;
+    bottom: 0;
+    width: 40%;
+    height: 2px;
+    background: var(--ember);
+    animation: scan 2.4s linear infinite;
+  }
+  .lower { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .info { padding: 16px 18px; }
+  .info p { margin: 8px 0 0; color: var(--muted); font-size: 0.95rem; line-height: 1.55; }
+  .equation {
+    margin: 12px 0;
+    padding: 12px;
+    border-left: 3px solid var(--ember);
+    background: #120b08;
+    font-family: "Share Tech Mono", ui-monospace, monospace;
+    text-align: center;
+    color: var(--gold);
+    font-size: 1.05rem;
+  }
+  .note { font-size: 0.78rem !important; color: #8d6a52 !important; }
+  .challenge {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 10px;
+    background: rgba(255, 90, 20, 0.08);
+    border: 1px solid rgba(255, 122, 48, 0.35);
+  }
+  .challenge strong { display: block; color: var(--gold); letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.75rem; }
+  .challenge p { margin: 4px 0 0; font-size: 0.88rem; }
+  @keyframes crawl { to { background-position: 18px 0; } }
+  @keyframes sheen { to { background-position: 220% 0; } }
+  @keyframes pulse-thumb {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.16); }
+  }
+  @keyframes throb {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.45); }
+  }
+  @keyframes blink { 50% { opacity: 0.25; } }
+  @keyframes scan { to { left: 110%; } }
+  @media (max-width: 900px) {
+    .layout, .lower { grid-template-columns: 1fr; }
+    .viewport { min-height: 420px; order: -1; }
+  }
+  @media (max-width: 600px) {
+    .readouts, .choice { grid-template-columns: 1fr; }
+    header { align-items: flex-start; }
+    .beacon { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div>
+      <p class="kicker">Flight deck · escape trial</p>
+      <h1>Black Hole Escape</h1>
+      <p class="subtitle">Launch a probe near a black hole. Tune speed and direction to see gravity bend the path, trap it, or let it escape.</p>
+    </div>
+    <div class="beacon"><i></i> ARMED</div>
+  </header>
+  <main>
+    <section class="layout">
+      <aside class="panel deck">
+        <div class="deck-body">
+        <h2>Launch board</h2>
+        <p class="intro">Fixed launch radius. Change one setting, then fire a new trajectory.</p>
+
+        <div class="dial">
+          <div class="dial-top"><label for="speed">Launch speed</label><output id="speedOut">0.85 vEsc</output></div>
+          <div class="rail"><input id="speed" type="range" min=".2" max="1.8" step=".01" value=".85"></div>
+          <div class="ends"><span>Slow</span><span>Fast</span></div>
+        </div>
+        <div class="dial">
+          <div class="dial-top"><label for="angle">Launch angle</label><output id="angleOut">35°</output></div>
+          <div class="rail"><input id="angle" type="range" min="-85" max="85" step="1" value="35"></div>
+          <div class="ends"><span>Clockwise</span><span>Counterclockwise</span></div>
+        </div>
+        <div class="dial">
+          <div class="dial-top"><label for="mass">Black hole mass</label><output id="massOut">1.0×</output></div>
+          <div class="rail"><input id="mass" type="range" min=".5" max="2" step=".05" value="1"></div>
+          <div class="ends"><span>Lower mass</span><span>Higher mass</span></div>
+        </div>
+        <div class="dial">
+          <div class="dial-top"><label for="radius">Launch radius</label><output id="radiusOut">3.2 rₛ</output></div>
+          <div class="rail"><input id="radius" type="range" min="2.2" max="6" step=".1" value="3.2"></div>
+          <div class="ends"><span>Near horizon</span><span>Farther away</span></div>
+        </div>
+
+        <div class="choice">
+          <button id="presetEscape" type="button">Escape</button>
+          <button id="presetOrbit" class="selected" type="button">Orbit</button>
+          <button id="presetCapture" type="button">Capture</button>
+        </div>
+
+        <label class="latch"><span>Show gravity field</span><input id="field" type="checkbox" checked><span class="bolt"></span></label>
+        <label class="latch"><span>Show escape-speed guide</span><input id="guide" type="checkbox" checked><span class="bolt"></span></label>
+        </div>
+        <div class="deck-actions">
+        <div class="buttons">
+          <button class="launch" id="launch" type="button">Launch probe</button>
+          <button id="reset" type="button">Reset</button>
+        </div>
+        <div class="status" aria-live="polite"><span class="status-dot" id="statusDot"></span><span id="statusText">Ready to launch a probe.</span></div>
+        </div>
+      </aside>
+
+      <div class="panel viewport">
+        <div class="viewport-head">
+          <h2>Trajectory scope</h2>
+          <span>Newtonian model · conceptual horizon</span>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="space" aria-label="Black hole particle trajectory simulation"></canvas>
+          <div class="tag tag-top">Probe trajectory</div>
+          <div class="tag tag-bottom">Central mass · event horizon</div>
+          <div class="hint">Click in space to set a launch direction</div>
+        </div>
+        <div class="legend">
+          <span class="key"><i class="pip" style="background:#ffb15a"></i> Probe</span>
+          <span class="key"><i class="pip" style="background:#ffc14a"></i> Trajectory</span>
+          <span class="key"><i class="pip" style="background:#ff4b3a"></i> Capture boundary</span>
+        </div>
+        <section class="readouts" aria-live="polite">
+          <div class="readout"><div class="name">Escape speed here</div><div class="value" id="escapeMetric">0.79</div><div class="unit">simulation speed units</div></div>
+          <div class="readout"><div class="name">Probe energy</div><div class="value" id="energyMetric">Bound</div><div class="unit" id="energyCaption">Relative specific energy</div></div>
+          <div class="readout"><div class="name">Outcome</div><div class="value" id="outcomeMetric">Not launched</div><div class="unit">from current initial conditions</div></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="lower">
+      <div class="panel info">
+        <h2>The physics</h2>
+        <p>Far from a black hole, a simple Newtonian model captures the idea that a faster probe has a better chance of escaping. The escape speed is the speed needed to reach arbitrarily far away with zero remaining speed.</p>
+        <div class="equation">v<sub>esc</sub> = √(2GM / r)</div>
+        <p class="note">Here G and the mass are folded into normalized simulation units. The red circle is a conceptual capture boundary; Newtonian mechanics is not accurate at the event horizon.</p>
+      </div>
+      <div class="panel info">
+        <h2>Try an experiment</h2>
+        <p>First, launch below the escape speed. Then increase speed past the escape threshold. Finally, change the launch angle: even with similar energy, a trajectory can pass close to the capture boundary or swing widely around the black hole.</p>
+        <div class="challenge">
+          <span>▲</span>
+          <div><strong>Challenge</strong><p>Find a trajectory that makes a close flyby and escapes. Then try to make the probe complete one or more loops before escaping.</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+(() => {
+const canvas=document.getElementById('space'),ctx=canvas.getContext('2d'),$=id=>document.getElementById(id);
+const ui={speed:$('speed'),angle:$('angle'),mass:$('mass'),radius:$('radius'),field:$('field'),guide:$('guide')};
+let W=800,H=500,dpr=1,stars=[],path=[],running=false,raf=null,outcome='Not launched',lastState=null;
+const G=1,rsBase=34;
+function center(){return{x:W*.51,y:H*.53}}
+function rs(){return rsBase*Number(ui.mass.value)}
+function scale(){return Math.min(W,H)*.34/6}
+function startPosition(){const c=center(),r=Number(ui.radius.value)*scale();return{x:c.x-r,y:c.y}}
+function getInitial(){const c=center(),p=startPosition(),a=Number(ui.angle.value)*Math.PI/180,s=Number(ui.speed.value)*escapeSpeed();const dx=(p.x-c.x),dy=(p.y-c.y),r=Math.hypot(dx,dy),rad={x:dx/r,y:dy/r},tan={x:-rad.y,y:rad.x};return{p,v:{x:rad.x*s*Math.cos(a)+tan.x*s*Math.sin(a),y:rad.y*s*Math.cos(a)+tan.y*s*Math.sin(a)}}}
+function escapeSpeed(){const r=Number(ui.radius.value);return Math.sqrt(2*G*Number(ui.mass.value)/r)}
+function resize(){const rect=canvas.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);W=Math.max(300,rect.width);H=Math.max(300,rect.height);canvas.width=Math.floor(W*dpr);canvas.height=Math.floor(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);stars=Array.from({length:Math.round(W*H/2400)},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random()*.55+.1}));draw()}
+function fieldDraw(c){if(!ui.field.checked)return;ctx.save();ctx.strokeStyle='rgba(180,90,40,.18)';ctx.lineWidth=1;for(let r=rs()*1.6;r<Math.max(W,H);r+=Math.max(18,rs()*.55)){ctx.beginPath();ctx.arc(c.x,c.y,r,0,Math.PI*2);ctx.stroke()}for(let i=0;i<24;i++){const a=i*Math.PI/12;ctx.beginPath();ctx.moveTo(c.x+Math.cos(a)*rs()*1.2,c.y+Math.sin(a)*rs()*1.2);ctx.lineTo(c.x+Math.cos(a)*Math.max(W,H),c.y+Math.sin(a)*Math.max(W,H));ctx.stroke()}ctx.restore()}
+function drawBlackHole(c){const r=rs();const halo=ctx.createRadialGradient(c.x,c.y,r*.8,c.x,c.y,r*3.7);halo.addColorStop(0,'rgba(255,96,121,.24)');halo.addColorStop(.3,'rgba(255,128,104,.12)');halo.addColorStop(1,'rgba(255,128,104,0)');ctx.fillStyle=halo;ctx.beginPath();ctx.arc(c.x,c.y,r*3.7,0,Math.PI*2);ctx.fill();
+ctx.save();ctx.translate(c.x,c.y);ctx.rotate(-.2);ctx.scale(1,.36);ctx.strokeStyle='rgba(255,167,103,.65)';ctx.lineWidth=9;ctx.shadowColor='#ff8c68';ctx.shadowBlur=18;ctx.beginPath();ctx.arc(0,0,r*1.5,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,221,163,.8)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,r*1.5,0,Math.PI*2);ctx.stroke();ctx.restore();
+ctx.setLineDash([4,5]);ctx.strokeStyle='rgba(255,75,58,.95)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(c.x,c.y,r,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#010208';ctx.beginPath();ctx.arc(c.x,c.y,r*.96,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(255,205,160,.45)';ctx.lineWidth=1;ctx.stroke()}
+function draw(){ctx.clearRect(0,0,W,H);const bg=ctx.createRadialGradient(W*.5,H*.5,4,W*.5,H*.5,Math.max(W,H)*.75);bg.addColorStop(0,'#1a100c');bg.addColorStop(1,'#070403');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);stars.forEach((s,i)=>{ctx.globalAlpha=s.a;ctx.fillStyle=i%10===0?'#ffb07a':'#f3e6d4';ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill()});ctx.globalAlpha=1;const c=center();fieldDraw(c);
+if(ui.guide.checked){const p=startPosition(),r=Math.hypot(p.x-c.x,p.y-c.y);ctx.beginPath();ctx.arc(c.x,c.y,r,0,Math.PI*2);ctx.strokeStyle='rgba(255,160,70,.28)';ctx.setLineDash([3,7]);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='rgba(255,196,120,.85)';ctx.font='11px "Share Tech Mono", monospace';ctx.fillText('launch radius',Math.min(c.x+r+8,W-92),c.y+4)}
+if(path.length>1){ctx.beginPath();ctx.moveTo(path[0].x,path[0].y);for(let i=1;i<path.length;i++)ctx.lineTo(path[i].x,path[i].y);const col=outcome==='Captured'?'#ff4b3a':outcome==='Escaped'?'#ffc14a':'#ff8a3d';ctx.strokeStyle=col;ctx.lineWidth=2;ctx.shadowColor=col;ctx.shadowBlur=7;ctx.stroke();ctx.shadowBlur=0}
+drawBlackHole(c);
+if(lastState){const q=lastState.p;ctx.save();ctx.shadowColor='#ff8a3d';ctx.shadowBlur=15;ctx.fillStyle='#ffe7c2';ctx.beginPath();ctx.arc(q.x,q.y,5,0,Math.PI*2);ctx.fill();ctx.restore()}
+else{const p=startPosition();ctx.fillStyle='#ffb15a';ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(255,177,90,.7)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+25,p.y);ctx.stroke()}
+ctx.fillStyle='rgba(255,228,200,.82)';ctx.font='11px "Share Tech Mono", monospace';ctx.fillText('launch point',startPosition().x-27,startPosition().y-15);ctx.fillText('rₛ',c.x+rs()+7,c.y-5)}
+function updateMetrics(){const ve=escapeSpeed(),s=Number(ui.speed.value)*ve,energy=.5*s*s-G*Number(ui.mass.value)/Number(ui.radius.value);$('speedOut').textContent=Number(ui.speed.value).toFixed(2)+' vEsc';$('angleOut').textContent=ui.angle.value+'°';$('massOut').textContent=Number(ui.mass.value).toFixed(2)+'×';$('radiusOut').textContent=Number(ui.radius.value).toFixed(1)+' rₛ';$('escapeMetric').textContent=ve.toFixed(2);$('energyMetric').textContent=Math.abs(energy)<.005?'Parabolic':energy>0?'Unbound':'Bound';$('energyCaption').textContent='Specific energy: '+energy.toFixed(3);$('outcomeMetric').textContent=outcome;$('statusText').textContent=outcome==='Escaped'?'Probe escaped the displayed region.':outcome==='Captured'?'Probe crossed the capture boundary.':outcome==='Orbiting'?'Probe remains gravitationally bound.':outcome==='Ready'?'Ready to launch a probe.':'Ready to launch a probe.';$('statusDot').style.background=outcome==='Captured'?'var(--red)':outcome==='Escaped'?'var(--gold)':'var(--ember)'}
+function reset(){running=false;if(raf)cancelAnimationFrame(raf);path=[];lastState=null;outcome='Not launched';updateMetrics();draw()}
+function launch(){reset();const init=getInitial(),c=center();lastState={p:{...init.p},v:{...init.v}};path=[{...init.p}];running=true;outcome='In flight';updateMetrics();let steps=0;const dt=.018;function tick(){if(!running)return;let p=lastState.p,v=lastState.v;const dx=c.x-p.x,dy=c.y-p.y,distPx=Math.hypot(dx,dy);const pxPerUnit=scale(),r=Math.max(.05,distPx/pxPerUnit),mu=G*Number(ui.mass.value);const ax=-mu*dx/(r*r*r),ay=-mu*dy/(r*r*r);v.x+=ax*dt;v.y+=ay*dt;p.x+=v.x*dt*pxPerUnit;p.y+=v.y*dt*pxPerUnit;steps++;if(steps%2===0)path.push({...p});lastState={p,v};const d=Math.hypot(p.x-c.x,p.y-c.y);if(d<rs()*1.02){outcome='Captured';running=false}else if(d>Math.max(W,H)*.72){outcome='Escaped';running=false}else if(steps>3000){outcome='Orbiting';running=false}else if(steps>1800&&Math.hypot(v.x,v.y)<.04){outcome='Orbiting';running=false}if(!running){updateMetrics()}draw();if(running)raf=requestAnimationFrame(tick)}raf=requestAnimationFrame(tick)}
+Object.values(ui).forEach(el=>el.addEventListener('input',()=>{reset();updateMetrics();draw()}));
+$('launch').addEventListener('click',launch);$('reset').addEventListener('click',reset);
+function preset(speed,angle,radius){ui.speed.value=speed;ui.angle.value=angle;ui.radius.value=radius;reset();updateMetrics();draw()}
+$('presetEscape').addEventListener('click',()=>{preset(1.25,15,4.5);selectPreset('presetEscape')});
+$('presetOrbit').addEventListener('click',()=>{preset(.72,55,3.8);selectPreset('presetOrbit')});
+$('presetCapture').addEventListener('click',()=>{preset(.52,-20,2.3);selectPreset('presetCapture')});
+function selectPreset(id){['presetEscape','presetOrbit','presetCapture'].forEach(k=>$(k).classList.toggle('selected',k===id))}
+canvas.addEventListener('click',e=>{if(running)return;const rect=canvas.getBoundingClientRect(),p={x:e.clientX-rect.left,y:e.clientY-rect.top},c=center(),s=startPosition();const dx=p.x-s.x,dy=p.y-s.y;let angle=Math.atan2(dy,dx)*180/Math.PI;const radialAngle=Math.atan2(s.y-c.y,s.x-c.x);let rel=(Math.atan2(dy,dx)-radialAngle)*180/Math.PI;while(rel>180)rel-=360;while(rel<-180)rel+=360;ui.angle.value=String(Math.max(-85,Math.min(85,Math.round(rel))));reset();updateMetrics();draw()});
+new ResizeObserver(resize).observe(canvas);window.addEventListener('resize',resize);resize();updateMetrics();draw();
+})();
+</script>
+<script>
+(() => {
+  const rails = document.querySelectorAll(".rail");
+  const paint = () => {
+    rails.forEach((rail) => {
+      const el = rail.querySelector("input");
+      const pct = ((+el.value - +el.min) / (+el.max - +el.min)) * 100;
+      rail.style.setProperty("--fill", pct + "%");
+    });
+  };
+  rails.forEach((rail) => rail.querySelector("input").addEventListener("input", paint));
+  document.querySelector(".choice").addEventListener("click", () => requestAnimationFrame(paint));
+  document.getElementById("space").addEventListener("click", () => requestAnimationFrame(paint));
+  document.getElementById("reset").addEventListener("click", () => requestAnimationFrame(paint));
+  paint();
+})();
+</script>
+</body>
+</html>
